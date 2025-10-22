@@ -1,0 +1,66 @@
+name: Generate test spec
+on:
+  pull_request:
+
+jobs:
+  generate_test_spec:
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Diff files /docs/**
+        id: diff_files
+        run: |
+            changed=$(git diff --name-only origin/${{ github.base_ref }} HEAD --relative docs/ | wc -l)
+            echo "::set-output name=changed::$changed"
+
+      - uses: google-github-actions/auth@v2
+        if: ${{ steps.diff_files.outputs.changed != '0' }}
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account }}
+
+      - name: Set up Cloud SDK
+        if: ${{ steps.diff_files.outputs.changed != '0' }}
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        if: ${{ steps.diff_files.outputs.changed != '0' }}
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: ${{ steps.diff_files.outputs.changed != '0' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-genai
+
+
+      - name: generate_test_spec
+        if: ${{ steps.diff_files.outputs.changed != '0' }}
+        run: |
+          diff_files=$(git diff --name-only origin/${{ github.base_ref }} HEAD --relative docs/ | tr '\n' ' ')
+          # 設計書1つにに対してテスト仕様書を1つ生成する
+          python .github/scripts/generate_test_spec.py $diff_files
+
+      - name: Commit test spec
+        if: ${{ steps.diff_files.outputs.changed != '0' }}
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add tests/
+
+          if git diff --cached --exit-code; then
+            echo "No changes to commit. Skipping..."
+          else
+            git commit -m "Add test spec"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
