@@ -4,7 +4,7 @@ from google import genai
 from google.genai import types
 
 # 設定値
-PROJECT_ID = "1020268302403"
+PROJECT_ID = "fit-cloudgemini"
 LOCATION = "us-central1"
 MODEL_NAME = "gemini-2.0-flash-exp"
 TEMPERATURE = 0
