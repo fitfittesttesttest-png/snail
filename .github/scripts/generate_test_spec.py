@@ -4,7 +4,7 @@ from google import genai
 from google.genai import types
 
 # 設定値
-PROJECT_ID = "719093643589"
+PROJECT_ID = "1020268302403"
 LOCATION = "us-central1"
 MODEL_NAME = "gemini-2.0-flash-exp"
 TEMPERATURE = 0
@@ -36,14 +36,7 @@ SAFETY_SETTINGS = [types.SafetySetting(
 ]
 
 def generate_test_spec(document: str) -> str:
-    """設計ドキュメントからテスト仕様書を生成する。
-
-    Args:
-        document: 設計ドキュメントのテキスト。
-
-    Returns:
-        生成されたテスト仕様書のテキスト。
-    """
+    """設計ドキュメントからテスト仕様書を生成する。"""
     client = genai.Client(
         vertexai=True,
         project=PROJECT_ID,
@@ -52,8 +45,12 @@ def generate_test_spec(document: str) -> str:
 
     contents = [
         types.Content(
+            role="system",
+            parts=[types.Part.from_text(text=SYSTEM_INSTRUCTION)]
+        ),
+        types.Content(
             role="user",
-            parts=[types.Part.from_text(document)]
+            parts=[types.Part.from_text(text=document)]
         )
     ]
 
@@ -63,7 +60,6 @@ def generate_test_spec(document: str) -> str:
         max_output_tokens=MAX_OUTPUT_TOKENS,
         response_modalities=RESPONSE_MODALITIES,
         safety_settings=SAFETY_SETTINGS,
-        system_instruction=[types.Part.from_text(SYSTEM_INSTRUCTION)],
     )
 
     response = client.models.generate_content(
@@ -72,7 +68,6 @@ def generate_test_spec(document: str) -> str:
         config=generate_content_config,
     )
     return response.text
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
