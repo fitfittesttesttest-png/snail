@@ -45,10 +45,6 @@ def generate_test_spec(document: str) -> str:
 
     contents = [
         types.Content(
-            role="system",
-            parts=[types.Part.from_text(text=SYSTEM_INSTRUCTION)]
-        ),
-        types.Content(
             role="user",
             parts=[types.Part.from_text(text=document)]
         )
@@ -66,6 +62,7 @@ def generate_test_spec(document: str) -> str:
         model=MODEL_NAME,
         contents=contents,
         config=generate_content_config,
+        system_instruction=SYSTEM_INSTRUCTION
     )
     return response.text
 
